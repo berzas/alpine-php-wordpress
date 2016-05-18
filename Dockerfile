@@ -1,4 +1,5 @@
-FROM alpine:edge
+FROM hypriot/rpi-alpine-scratch
+
 MAINTAINER Etopian Inc. <contact@etopian.com>
 
 LABEL   devoply.type="site" \

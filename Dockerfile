@@ -1,47 +1,35 @@
-FROM hypriot/rpi-alpine-scratch
+## BUILDING
+##   (from project root directory)
+##   $ docker build -t php-for-berzas-alpine-php-wordpress .
+##
+## RUNNING
+##   $ docker run -p 9000:9000 php-for-berzas-alpine-php-wordpress
+##
+## CONNECTING
+##   Lookup the IP of your active docker host using:
+##     $ docker-machine ip $(docker-machine active)
+##   Connect to the container at DOCKER_IP:9000
+##     replacing DOCKER_IP for the IP of your active docker host
 
-MAINTAINER Etopian Inc. <contact@etopian.com>
+FROM gcr.io/stacksmith-images/minideb:jessie-r8
 
-LABEL   devoply.type="site" \
-        devoply.cms="wordpress" \
-        devoply.framework="wordpress" \
-        devoply.language="php" \
-        devoply.require="mariadb etopian/nginx-proxy" \
-        devoply.recommend="redis" \
-        devoply.description="WordPress on Nginx and PHP-FPM with WP-CLI." \
-        devoply.name="WordPress" \
-        devoply.params="docker run -d --name {container_name} -e VIRTUAL_HOST={virtual_hosts} -v /data/sites/{domain_name}:/DATA etopian/alpine-php-wordpress"
+MAINTAINER Bitnami <containers@bitnami.com>
 
+ENV STACKSMITH_STACK_ID="p90qmo5" \
+    STACKSMITH_STACK_NAME="PHP for berzas/alpine-php-wordpress" \
+    STACKSMITH_STACK_PRIVATE="1"
 
-RUN apk update \
-    && apk add bash less vim nginx ca-certificates \
-    php-fpm php-json php-zlib php-xml php-pdo php-phar php-openssl \
-    php-pdo_mysql php-mysqli \
-    php-gd php-iconv php-mcrypt \
-    php-mysql php-curl php-opcache php-ctype php-apcu \
-    php-intl php-bcmath php-dom php-xmlreader mysql-client && apk add -u musl
+# Install required system packages
+RUN install_packages libc6 zlib1g libxslt1.1 libtidy-0.99-0 libreadline6 libncurses5 libtinfo5 libsybdb5 libmcrypt4 libldap-2.4-2 libstdc++6 libgmp10 libpng12-0 libjpeg62-turbo libbz2-1.0 libxml2 libssl1.0.0 libcurl3 libfreetype6 libicu52 libgcc1 libgcrypt20 libgssapi-krb5-2 libgnutls-deb0-28 libsasl2-2 liblzma5 libidn11 librtmp1 libssh2-1 libkrb5-3 libk5crypto3 libcomerr2 libgpg-error0 libkrb5support0 libkeyutils1 libp11-kit0 libtasn1-6 libnettle4 libhogweed2 libffi6
 
-RUN rm -rf /var/cache/apk/*
+RUN bitnami-pkg install php-7.1.1-1 --checksum cc64828e801996f2f84d48814d8f74687ffbb0bb15f078586b2bf0a50371c7a9
 
-ENV TERM="xterm" \
-    DB_HOST="172.17.0.1" \
-    DB_NAME="" \
-    DB_USER=""\
-    DB_PASS=""
+ENV PATH=/opt/bitnami/php/bin:$PATH
 
+## STACKSMITH-END: Modifications below this line will be unchanged when regenerating
 
-RUN sed -i 's/;cgi.fix_pathinfo=1/cgi.fix_pathinfo=0/g' /etc/php/php.ini && \
-    sed -i 's/nginx:x:100:101:Linux User,,,:\/var\/www\/localhost\/htdocs:\/sbin\/nologin/nginx:x:100:101:Linux User,,,:\/var\/www\/localhost\/htdocs:\/bin\/bash/g' /etc/passwd && \
-    sed -i 's/nginx:x:100:101:Linux User,,,:\/var\/www\/localhost\/htdocs:\/sbin\/nologin/nginx:x:100:101:Linux User,,,:\/var\/www\/localhost\/htdocs:\/bin\/bash/g' /etc/passwd-
+# PHP base template
+COPY . /app
+WORKDIR /app
 
-ADD files/nginx.conf /etc/nginx/
-ADD files/php-fpm.conf /etc/php/
-ADD files/run.sh /
-RUN chmod +x /run.sh
-
-RUN curl -O https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar && chmod +x wp-cli.phar && mv wp-cli.phar /usr/bin/wp-cli
-
-EXPOSE 80
-VOLUME ["/DATA"]
-
-CMD ["/run.sh"]
+CMD ["php", "-a"]
